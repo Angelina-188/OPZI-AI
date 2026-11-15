@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>OPZI AI | Job Eligibility Checker</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="logo">OPZI<span>AI.</span></a>
+
+        <span class="nav-label">Finding Your Right Job Match</span>
+    </nav>
+
+
+    <header class="hero">
+
+        <div class="hero-content">
+
+            <span class="eyebrow">YOUR AI-POWERED CAREER ASSISTANT</span>
+
+            <h1>
+                Find out how well you
+                <span>match the job.</span>
+            </h1>
+
+            <p>
+                Upload your CV, paste a job description and let OPZI AI
+                analyse your qualifications, skills and experience.
+            </p>
+
+            <a href="#checker" class="primary-button">
+                Check My Eligibility
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <section class="checker-section" id="checker">
+
+            <div class="section-heading">
+
+                <span class="eyebrow">START YOUR ANALYSIS!</span>
+
+                <h2>Check your job eligibility</h2>
+
+                <p>
+                    Provide your CV and the job description to get your
+                    personalised eligibility report.
+                </p>
+
+            </div>
+
+
+            <form id="eligibilityForm"
+                  class="upload-card"
+                  enctype="multipart/form-data">
+
+                <div class="form-group">
+
+                    <label for="cv">Upload your CV</label>
+
+                    <div class="upload-area" id="uploadArea">
+
+                        <input
+                            type="file"
+                            id="cv"
+                            name="cv"
+                            accept=".pdf,.docx"
+                            hidden
+                        >
+
+                        <div class="upload-icon">↑</div>
+
+                        <h3>Upload your CV</h3>
+
+                        <p>
+                            Drag and drop your file here or
+                            <span>browse files</span>
+                        </p>
+
+                        <small>PDF or DOCX · Maximum 5 MB</small>
+
+                        <p id="fileName" class="file-name"></p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="jobDescription">
+                        Paste the job description
+                    </label>
+
+                    <textarea
+                        id="jobDescription"
+                        name="jobDescription"
+                        rows="9"
+                        placeholder="Paste the complete job description here..."
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    id="analyseButton"
+                    class="primary-button submit-button">
+
+                    Analyse My Eligibility
+
+                </button>
+
+
+                <p id="message" class="message"></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- RESULTS -->
+
+        <section id="results" class="results-section" hidden>
+
+            <div class="section-heading">
+
+                <span class="eyebrow">YOUR PERSONAL REPORT</span>
+
+                <h2>Your OPZI AI Eligibility Report</h2>
+
+                <p id="jobTitle"></p>
+
+            </div>
+
+
+            <!-- SCORE -->
+
+            <div class="score-card">
+
+                <p class="score-label">Your Eligibility Match</p>
+
+                <div class="score-circle" id="scoreCircle">
+
+                    <span id="scoreValue">--%</span>
+
+                </div>
+
+                <h3 id="scoreMessage">
+                    Your estimated job match score
+                </h3>
+
+                <p class="score-note">
+                    Based on the job requirements supported by evidence
+                    in your CV. This is not a hiring guarantee.
+                </p>
+
+            </div>
+
+
+            <!-- SKILLS MATCH AND SKILLS MISSING -->
+
+            <div class="keyword-dashboard">
+
+                <div class="keyword-card matched-card">
+
+                    <h3>✓ Skills Match</h3>
+
+                    <p>
+                        Job requirements supported by your CV.
+                    </p>
+
+                    <div id="skillsMatch" class="keyword-list"></div>
+
+                </div>
+
+
+                <div class="keyword-card missing-card">
+
+                    <h3>! Skills Missing</h3>
+
+                    <p>
+                        Job requirements not confirmed by your CV.
+                    </p>
+
+                    <div id="skillsMissing" class="keyword-list"></div>
+
+                </div>
+
+            </div>
+
+
+            <!-- DETAILED AI ANALYSIS AND OVERALL RECOMMENDATION -->
+
+            <div class="analysis-card">
+
+                <h3>Detailed AI Analysis</h3>
+
+                <div id="analysisResult"></div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="newAnalysisButton">
+
+                Analyse Another Job
+
+            </button>
+
+        </section>
+
+
+        <!-- HOW IT WORKS -->
+
+        <section class="how-section">
+
+            <div class="section-heading">
+
+                <span class="eyebrow">SIMPLE AND SMART</span>
+
+                <h2>How OPZI AI works</h2>
+
+            </div>
+
+
+            <div class="steps-grid">
+
+                <div class="step-card">
+
+                    <span>01</span>
+
+                    <h3>Upload your CV</h3>
+
+                    <p>
+                        Provide your existing CV in PDF or DOCX format.
+                    </p>
+
+                </div>
+
+
+                <div class="step-card">
+
+                    <span>02</span>
+
+                    <h3>Paste the job description</h3>
+
+                    <p>
+                        Add the requirements and responsibilities of
+                        the position you want.
+                    </p>
+
+                </div>
+
+
+                <div class="step-card">
+
+                    <span>03</span>
+
+                    <h3>Get your report</h3>
+
+                    <p>
+                        Discover your matches, skill gaps and
+                        overall job recommendation.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <a href="/" class="logo">OPZI<span>AI.</span></a>
+
+        <p>Make your next career move with confidence.</p>
+
+        <small>© 2026 OPZI AI. All rights reserved.</small>
+
+    </footer>
+
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
