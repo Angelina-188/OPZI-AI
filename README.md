@@ -4,6 +4,17 @@ OPZI AI is an AI-powered career eligibility analysis tool that helps job seekers
 
 Users can upload their CV and enter a job description to receive an eligibility score, identify matching and missing skills, and get an overall recommendation.
 
+TRY THE LIVE APPLICATION AT:
+https://opzi-ai.onrender.com/
+
+Key Responsibilities
+
+• Assist in planning and executing multi-channel marketing campaigns (email, social media, and digital ads).
+• Draft, edit, and schedule engaging content for company social media channels and blog posts.
+• Track and report on key performance indicators (KPIs) using analytics tools like Google Analytics and HubSpot.
+• Coordinate promotional events, webinars, and trade show logistics.
+• Collaborate with internal designers and copywriters to produce marketing collateral.
+
 ✨Features
 
 - **Eligibility Score:** Provides an estimated score based on the CV and job requirements.
