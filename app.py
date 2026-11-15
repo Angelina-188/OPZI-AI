@@ -1,3 +1,4 @@
+
 import io
 import json
 import re
@@ -16,110 +17,80 @@ app = Flask(__name__)
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
-# AI CONFIGURATION
 
-LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
-
-MODEL_NAME = "qwen/qwen2.5-vl-7b:2"
+# =====================================================
+# 1. GEMINI CONFIGURATION
+# =====================================================
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
-AI_PROVIDER = os.getenv("AI_PROVIDER", "local").lower()
 
+# =====================================================
+# 2. CONNECT TO GEMINI ONLY
+# =====================================================
 
-# CONNECT TO LM STUDIO OR GEMINI
+def ask_ai(prompt, json_mode=False):
 
-def ask_ai(prompt):
+    if not GEMINI_API_KEY:
+        raise ValueError("Gemini API key is missing.")
 
-    # OPTION 1: LOCAL LM STUDIO
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/"
+        f"models/{GEMINI_MODEL}:generateContent"
+    )
 
-    if AI_PROVIDER == "local":
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY
+    }
 
-        data = {
-            "model": MODEL_NAME,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.1,
-            "max_tokens": 1800,
-            "stream": False
-        }
+    generation_config = {
+        "temperature": 0.1,
+        "maxOutputTokens": 4096
+    }
 
-        response = requests.post(
-            LM_STUDIO_URL,
-            json=data,
-            timeout=300
-        )
+    if json_mode:
+        generation_config["responseMimeType"] = "application/json"
 
-        response.raise_for_status()
-
-        result = response.json()
-
-        return result["choices"][0]["message"]["content"]
-
-
-    # OPTION 2: ONLINE GEMINI
-
-    elif AI_PROVIDER == "gemini":
-
-        if not GEMINI_API_KEY:
-            raise ValueError("Gemini API key is missing.")
-
-        url = (
-            "https://generativelanguage.googleapis.com/v1beta/"
-            f"models/{GEMINI_MODEL}:generateContent"
-        )
-
-        headers = {
-            "Content-Type": "application/json",
-            "x-goog-api-key": GEMINI_API_KEY
-        }
-
-        data = {
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            "text": prompt
-                        }
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.1,
-                "maxOutputTokens": 1800
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": prompt
+                    }
+                ]
             }
-        }
+        ],
+        "generationConfig": generation_config
+    }
 
-        response = requests.post(
-            url,
-            headers=headers,
-            json=data,
-            timeout=180
+    response = requests.post(
+        url,
+        headers=headers,
+        json=data,
+        timeout=90
+    )
+
+    response.raise_for_status()
+
+    result = response.json()
+
+    try:
+        return result["candidates"][0]["content"]["parts"][0]["text"]
+
+    except (KeyError, IndexError, TypeError):
+        print("Gemini response:", json.dumps(result)[:2000])
+        raise ValueError(
+            "Gemini returned an empty or invalid response."
         )
 
-        response.raise_for_status()
 
-        result = response.json()
-
-        try:
-            return result["candidates"][0]["content"]["parts"][0]["text"]
-
-        except (KeyError, IndexError, TypeError):
-            raise ValueError("Gemini returned an empty or invalid response.")
-
-
-    else:
-
-        raise ValueError("Invalid AI provider configuration.")
-
-    
-# 2. EXTRACT VALID JSON FROM AI RESPONSE
+# =====================================================
+# 3. EXTRACT VALID JSON
+# =====================================================
 
 def extract_json(ai_response):
 
@@ -135,7 +106,13 @@ def extract_json(ai_response):
     cleaned = re.sub(r"\s*```$", "", cleaned)
 
     try:
-        return json.loads(cleaned)
+        result = json.loads(cleaned)
+
+        if not isinstance(result, dict):
+            raise ValueError("AI response must be a JSON object.")
+
+        return result
+
     except json.JSONDecodeError:
         pass
 
@@ -145,10 +122,17 @@ def extract_json(ai_response):
     if start == -1 or end == -1:
         raise ValueError("AI did not return valid JSON.")
 
-    return json.loads(cleaned[start:end + 1])
+    result = json.loads(cleaned[start:end + 1])
+
+    if not isinstance(result, dict):
+        raise ValueError("AI response must be a JSON object.")
+
+    return result
 
 
-# 3. NORMALISE TEXT
+# =====================================================
+# 4. NORMALISE TEXT
+# =====================================================
 
 def normalise(text):
 
@@ -163,7 +147,9 @@ def normalise(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
-# 4. VERIFY EVIDENCE
+# =====================================================
+# 5. VERIFY EVIDENCE
+# =====================================================
 
 def evidence_exists(evidence, source_text):
 
@@ -176,7 +162,9 @@ def evidence_exists(evidence, source_text):
     return evidence in source
 
 
-# 5. EXTRACT JOB REQUIREMENTS
+# =====================================================
+# 6. EXTRACT JOB REQUIREMENTS
+# =====================================================
 
 def extract_job_requirements(job_description):
 
@@ -185,7 +173,7 @@ You are an information extraction assistant.
 
 Read the job description and extract its actual requirements.
 
-Return ONLY valid JSON in this format:
+Return JSON in this format:
 
 {{
     "job_title": "Job title",
@@ -212,14 +200,16 @@ RULES:
 7. Evidence must be copied exactly from the job description.
 8. Use verifiable_in_cv=false for requirements that normally cannot be established from a CV, such as future availability.
 9. Do not assume that a candidate meets any requirement.
-10. Return JSON only.
+10. Return valid JSON only.
 
 JOB DESCRIPTION:
 
 {job_description[:12000]}
 """
 
-    result = extract_json(ask_ai(prompt))
+    result = extract_json(
+        ask_ai(prompt, json_mode=True)
+    )
 
     if not isinstance(result.get("requirements"), list):
         raise ValueError("Job requirements could not be extracted.")
@@ -240,12 +230,16 @@ JOB DESCRIPTION:
         if not evidence_exists(evidence, job_description):
             continue
 
-        priority = str(item.get("priority", "mandatory")).lower()
+        priority = str(
+            item.get("priority", "mandatory")
+        ).lower()
 
         if priority not in ["mandatory", "preferred"]:
             priority = "mandatory"
 
-        category = str(item.get("category", "other")).lower()
+        category = str(
+            item.get("category", "other")
+        ).lower()
 
         verified_requirements.append({
             "name": name,
@@ -258,7 +252,9 @@ JOB DESCRIPTION:
         })
 
     if not verified_requirements:
-        raise ValueError("No verifiable job requirements were extracted.")
+        raise ValueError(
+            "No verifiable job requirements were extracted."
+        )
 
     return {
         "job_title": result.get("job_title", "Job Opportunity"),
@@ -267,7 +263,9 @@ JOB DESCRIPTION:
     }
 
 
-# 6. EXTRACT CV INFORMATION
+# =====================================================
+# 7. EXTRACT CV INFORMATION
+# =====================================================
 
 def extract_cv_information(cv_text):
 
@@ -276,7 +274,7 @@ You are a CV information extraction assistant.
 
 Extract information that is explicitly stated in the CV.
 
-Return ONLY valid JSON in this format:
+Return JSON in this format:
 
 {{
     "education": [],
@@ -304,14 +302,16 @@ RULES:
 5. Do not infer availability unless explicitly stated.
 6. Do not assume a degree subject.
 7. Every evidence quotation must appear in the CV.
-8. Return JSON only.
+8. Return valid JSON only.
 
 CV:
 
 {cv_text[:12000]}
 """
 
-    result = extract_json(ask_ai(prompt))
+    result = extract_json(
+        ask_ai(prompt, json_mode=True)
+    )
 
     sections = [
         "education",
@@ -347,9 +347,12 @@ CV:
     return verified
 
 
-# 7. RELATED SKILL MAPPING
+# =====================================================
+# 8. RELATED SKILL MAPPING
+# =====================================================
 
 RELATED_SKILLS = {
+
     "communication": [
         "telesales",
         "customer service",
@@ -392,8 +395,9 @@ RELATED_SKILLS = {
 }
 
 
-# 8. CHECK EXACT MATCHES
-
+# =====================================================
+# 9. CHECK EXACT MATCHES
+# =====================================================
 
 def check_exact_match(requirement, cv_text):
 
@@ -402,26 +406,32 @@ def check_exact_match(requirement, cv_text):
     cv = normalise(cv_text)
 
     aliases = {
+
         "microsoft excel": [
             "ms excel",
             "excel"
         ],
+
         "power bi": [
             "powerbi"
         ],
+
         "microsoft word": [
             "ms word"
         ],
+
         "masters degree": [
             "master's degree",
             "master degree",
             "postgraduate degree"
         ],
+
         "postgraduate student": [
             "masters student",
             "master's student",
             "postgraduate"
         ],
+
         "event volunteering": [
             "event volunteer",
             "volunteering for events",
@@ -431,7 +441,9 @@ def check_exact_match(requirement, cv_text):
 
     possible_terms = [name]
 
-    possible_terms.extend(aliases.get(name, []))
+    possible_terms.extend(
+        aliases.get(name, [])
+    )
 
     for term in possible_terms:
 
@@ -448,7 +460,9 @@ def check_exact_match(requirement, cv_text):
     }
 
 
-# 9. CHECK RELATED MATCHES
+# =====================================================
+# 10. CHECK RELATED MATCHES
+# =====================================================
 
 def check_related_match(requirement, cv_text):
 
@@ -476,7 +490,9 @@ def check_related_match(requirement, cv_text):
     }
 
 
-# 10. MATCH REQUIREMENTS AGAINST CV
+# =====================================================
+# 11. MATCH REQUIREMENTS AGAINST CV
+# =====================================================
 
 def match_requirements(requirements, cv_text):
 
@@ -501,7 +517,10 @@ def match_requirements(requirements, cv_text):
             unconfirmed_requirements.append({
                 **requirement,
                 "status": "unconfirmed",
-                "reason": "This requirement cannot be confirmed from the CV alone."
+                "reason": (
+                    "This requirement cannot be confirmed "
+                    "from the CV alone."
+                )
             })
 
             continue
@@ -551,18 +570,28 @@ def match_requirements(requirements, cv_text):
         )
 
     return {
+
         "score": score,
+
         "exact_matches": exact_matches,
+
         "related_matches": related_matches,
+
         "missing_requirements": missing_requirements,
+
         "unconfirmed_requirements": unconfirmed_requirements,
-        "assessed_requirements": len(requirements) - len(unconfirmed_requirements),
+
+        "assessed_requirements": (
+            len(requirements) - len(unconfirmed_requirements)
+        ),
+
         "total_requirements": len(requirements)
     }
 
 
-# 11. GENERATE AI EXPLANATION
-
+# =====================================================
+# 12. GENERATE AI EXPLANATION
+# =====================================================
 
 def generate_explanation(
     job_title,
@@ -625,7 +654,9 @@ RULES:
     return ask_ai(prompt)
 
 
-# 12. HOMEPAGE
+# =====================================================
+# 13. HOMEPAGE
+# =====================================================
 
 @app.route("/")
 def home():
@@ -633,18 +664,23 @@ def home():
     return render_template("index.html")
 
 
-# 13. HEALTH CHECK
+# =====================================================
+# 14. HEALTH CHECK
+# =====================================================
 
 @app.route("/health")
 def health():
 
     return jsonify({
         "status": "running",
-        "application": "OPZI AI"
+        "application": "OPZI AI",
+        "ai_provider": "Gemini"
     })
 
 
-# 14. ANALYSE CV AND JOB DESCRIPTION
+# =====================================================
+# 15. ANALYSE CV AND JOB DESCRIPTION
+# =====================================================
 
 @app.route("/analyse", methods=["POST"])
 def analyse():
@@ -710,26 +746,33 @@ def analyse():
         if not cv_text.strip():
 
             return jsonify({
-                "error": "No readable text found in your CV. Scanned PDFs may require OCR."
+                "error": (
+                    "No readable text found in your CV. "
+                    "Scanned PDFs may require OCR."
+                )
             }), 400
 
         # Extract job requirements.
+
         job_data = extract_job_requirements(
             job_description
         )
 
-        # Extract CV information for the AI report.
+        # Extract CV information.
+
         cv_information = extract_cv_information(
             cv_text
         )
 
         # Verify matches using Python.
+
         match_results = match_requirements(
             job_data["requirements"],
             cv_text
         )
 
         # Generate explanatory report.
+
         explanation = generate_explanation(
             job_data["job_title"],
             cv_information,
@@ -737,12 +780,14 @@ def analyse():
         )
 
         # Combine exact and related matches.
+
         matched_keywords = (
             match_results["exact_matches"]
             + match_results["related_matches"]
         )
 
         # Combine missing and unconfirmed requirements.
+
         missing_keywords = (
             match_results["missing_requirements"]
             + match_results["unconfirmed_requirements"]
@@ -770,34 +815,72 @@ def analyse():
 
     except requests.exceptions.Timeout:
 
+        print("Gemini request timed out.")
+
         return jsonify({
-            "error": "The AI model took too long to respond. Try a shorter CV or job description."
+            "error": (
+                "Gemini took too long to respond. "
+                "Please try again with a shorter CV or job description."
+            )
         }), 504
 
-    except requests.exceptions.RequestException:
+    except requests.exceptions.HTTPError as error:
+
+        print("Gemini HTTP error:", str(error))
+
+        if error.response is not None:
+
+            print("Gemini API status:", error.response.status_code)
+
+            print(
+                "Gemini API response:",
+                error.response.text[:1500]
+            )
 
         return jsonify({
-            "error": "Could not connect to LM Studio. Check that the server is running and the model is loaded."
+            "error": (
+                "Gemini API request failed. "
+                "Please check your API configuration and try again."
+            )
+        }), 502
+
+    except requests.exceptions.RequestException as error:
+
+        print("Gemini connection error:", str(error))
+
+        return jsonify({
+            "error": (
+                "Could not connect to Gemini. "
+                "Please try again later."
+            )
         }), 503
 
     except (ValueError, json.JSONDecodeError) as error:
 
-        print("Extraction error:", error)
+        print("Extraction error:", str(error))
 
         return jsonify({
-            "error": "The AI returned an invalid response. Please try again."
+            "error": (
+                "The AI returned an invalid response. "
+                "Please try again."
+            )
         }), 422
 
     except Exception as error:
 
-        print("Analysis error:", error)
+        print("Analysis error:", str(error))
 
         return jsonify({
-            "error": "We could not analyse your CV. Please try again."
+            "error": (
+                "We could not analyse your CV. "
+                "Please try again."
+            )
         }), 500
 
 
-# 15. FILE SIZE ERROR
+# =====================================================
+# 16. FILE SIZE ERROR
+# =====================================================
 
 @app.errorhandler(413)
 def file_too_large(error):
@@ -807,8 +890,16 @@ def file_too_large(error):
     }), 413
 
 
-# 16. RUN APPLICATION
+# =====================================================
+# 17. RUN APPLICATION
+# =====================================================
 
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
