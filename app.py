@@ -2,51 +2,123 @@ import io
 import json
 import re
 import unicodedata
+import os
 
 import requests
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 from pypdf import PdfReader
 from docx import Document
+
+load_dotenv()
 
 app = Flask(__name__)
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
+# AI CONFIGURATION
+
 LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
+
 MODEL_NAME = "qwen/qwen2.5-vl-7b:2"
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# 1. CONNECT TO LM STUDIO
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
+AI_PROVIDER = os.getenv("AI_PROVIDER", "local").lower()
+
+
+# CONNECT TO LM STUDIO OR GEMINI
 
 def ask_ai(prompt):
 
-    data = {
-        "model": MODEL_NAME,
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt
+    # OPTION 1: LOCAL LM STUDIO
+
+    if AI_PROVIDER == "local":
+
+        data = {
+            "model": MODEL_NAME,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.1,
+            "max_tokens": 1800,
+            "stream": False
+        }
+
+        response = requests.post(
+            LM_STUDIO_URL,
+            json=data,
+            timeout=300
+        )
+
+        response.raise_for_status()
+
+        result = response.json()
+
+        return result["choices"][0]["message"]["content"]
+
+
+    # OPTION 2: ONLINE GEMINI
+
+    elif AI_PROVIDER == "gemini":
+
+        if not GEMINI_API_KEY:
+            raise ValueError("Gemini API key is missing.")
+
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/"
+            f"models/{GEMINI_MODEL}:generateContent"
+        )
+
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": GEMINI_API_KEY
+        }
+
+        data = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": prompt
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "maxOutputTokens": 1800
             }
-        ],
-        "temperature": 0.1,
-        "max_tokens": 1800,
-        "stream": False
-    }
+        }
 
-    response = requests.post(
-        LM_STUDIO_URL,
-        json=data,
-        timeout=300
-    )
+        response = requests.post(
+            url,
+            headers=headers,
+            json=data,
+            timeout=180
+        )
 
-    response.raise_for_status()
+        response.raise_for_status()
 
-    result = response.json()
+        result = response.json()
 
-    return result["choices"][0]["message"]["content"]
+        try:
+            return result["candidates"][0]["content"]["parts"][0]["text"]
+
+        except (KeyError, IndexError, TypeError):
+            raise ValueError("Gemini returned an empty or invalid response.")
 
 
+    else:
+
+        raise ValueError("Invalid AI provider configuration.")
+
+    
 # 2. EXTRACT VALID JSON FROM AI RESPONSE
 
 def extract_json(ai_response):
@@ -738,5 +810,5 @@ def file_too_large(error):
 # 16. RUN APPLICATION
 
 if __name__ == "__main__":
-
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
