@@ -359,7 +359,19 @@ form.addEventListener("submit", async function (event) {
 
         });
 
-        const data = await response.json();
+        const responseText = await response.text();
+
+        let data;
+
+        try {
+            data = JSON.parse(responseText);
+        } catch (error) {
+            console.error("Server response:", responseText);
+
+            throw new Error(
+                `Server returned an invalid response. HTTP status: ${response.status}. Check the browser console.`
+            );
+        }
 
         if (!response.ok) {
 
