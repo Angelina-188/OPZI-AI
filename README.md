@@ -13,6 +13,10 @@ Users can upload their CV and enter a job description to receive an eligibility 
 - **AI-Powered Analysis:** Generates an explanation of the candidate's strengths and areas to improve.
 - **Overall Recommendation:** Provides a final assessment of the candidate's suitability.
 
+✨ Application Preview
+
+<img width="1617" height="882" alt="image" src="https://github.com/user-attachments/assets/bf08ca27-cbb4-4bd4-8b22-fe59e4d7f914" />
+
 ✨ Technologies Used
 
 - Python
