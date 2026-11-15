@@ -47,10 +47,8 @@ OPZI AI/
 ### 1. Clone the Repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Angelina-188/OPZI-AI.git
 ```
-
-Replace the placeholder with your repository URL.
 
 ### 2. Open the Project Folder
 
