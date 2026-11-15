@@ -7,14 +7,6 @@ Users can upload their CV and enter a job description to receive an eligibility 
 TRY THE LIVE APPLICATION AT:
 https://opzi-ai.onrender.com/
 
-Key Responsibilities
-
-• Assist in planning and executing multi-channel marketing campaigns (email, social media, and digital ads).
-• Draft, edit, and schedule engaging content for company social media channels and blog posts.
-• Track and report on key performance indicators (KPIs) using analytics tools like Google Analytics and HubSpot.
-• Coordinate promotional events, webinars, and trade show logistics.
-• Collaborate with internal designers and copywriters to produce marketing collateral.
-
 ✨Features
 
 - **Eligibility Score:** Provides an estimated score based on the CV and job requirements.
@@ -36,83 +28,8 @@ Key Responsibilities
 - HTML
 - CSS
 - JavaScript
-- LM Studio
-- Qwen 2.5 VL 7B (local AI model)
-- PDF and DOCX text extraction
-
-✨ Project Structure
-
-```text
-OPZI AI/
-│
-├── app.py
-├── requirements.txt
-├── .env
-├── .gitignore
-│
-├── templates/
-│   └── index.html
-│
-└── static/
-    ├── style.css
-    └── script.js
-```
-
-✨ Installation and Setup
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Angelina-188/OPZI-AI.git
-```
-
-### 2. Open the Project Folder
-
-```bash
-cd OPZI-AI
-```
-
-### 3. Create a Virtual Environment
-
-```bash
-python -m venv .venv
-```
-
-Activate it on Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-### 4. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Set Up LM Studio
-
-1. Download and install LM Studio.
-2. Download the Qwen 2.5 VL 7B model.
-3. Load the model in LM Studio.
-4. Start the local server.
-5. Make sure the API endpoint is:
-
-```text
-http://127.0.0.1:1234/v1/chat/completions
-```
-
-### 6. Run the Application
-
-```bash
-python app.py
-```
-
-Open the following address in your browser:
-
-```text
-http://127.0.0.1:5000
-```
+- Render
+- Google Gemini Studio
 
 ✨ How to Use OPZI AI
 
