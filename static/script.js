@@ -12,9 +12,7 @@ const results = document.getElementById("results");
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 
-// -----------------------------------------
 // FILE VALIDATION
-// -----------------------------------------
 
 function validateFile(file) {
 
@@ -36,9 +34,7 @@ function validateFile(file) {
 }
 
 
-// -----------------------------------------
 // FILE SELECTION
-// -----------------------------------------
 
 cvInput.addEventListener("change", function () {
 
@@ -62,9 +58,7 @@ cvInput.addEventListener("change", function () {
 });
 
 
-// -----------------------------------------
 // DRAG AND DROP
-// -----------------------------------------
 
 uploadArea.addEventListener("click", function () {
 
@@ -121,9 +115,7 @@ uploadArea.addEventListener("drop", function (event) {
 });
 
 
-// -----------------------------------------
 // DISPLAY SKILLS MATCH AND SKILLS MISSING
-// -----------------------------------------
 
 function displayRequirements(containerId, requirements) {
 
@@ -158,9 +150,7 @@ function displayRequirements(containerId, requirements) {
 }
 
 
-// -----------------------------------------
 // DISPLAY AI ANALYSIS
-// -----------------------------------------
 
 function displayAnalysis(text) {
 
@@ -233,9 +223,7 @@ function displayAnalysis(text) {
 }
 
 
-// -----------------------------------------
 // DISPLAY SCORE
-// -----------------------------------------
 
 function displayScore(score) {
 
@@ -286,9 +274,7 @@ function displayScore(score) {
 }
 
 
-// -----------------------------------------
 // DISPLAY COMPLETE RESULTS
-// -----------------------------------------
 
 function displayResults(data) {
 
@@ -319,9 +305,7 @@ function displayResults(data) {
 }
 
 
-// -----------------------------------------
 // FORM SUBMISSION
-// -----------------------------------------
 
 form.addEventListener("submit", async function (event) {
 
@@ -408,9 +392,7 @@ form.addEventListener("submit", async function (event) {
 });
 
 
-// -----------------------------------------
 // NEW ANALYSIS
-// -----------------------------------------
 
 document.getElementById("newAnalysisButton")
     .addEventListener("click", function () {
